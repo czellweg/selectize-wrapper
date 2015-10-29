@@ -4,7 +4,7 @@
     "authors": [
         "Christof Zellweger"
     ],
-    "description": "Selectize wrapper with polymer, forked and adjusted from Florian Roy's original implementation",
+    "description": "Selectize wrapper using Polymer, forked and adjusted from Florian Roy's original implementation",
     "main": "element/*",
     "ignore": [
         "**/.*",
@@ -23,6 +23,7 @@
         "underscore" : "underscore#^1.8"
     },
     "devDependencies": {
+        "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
         "web-component-tester": "*"
     }
 }
