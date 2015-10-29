@@ -9,7 +9,7 @@ Forked from [selectize-decorator](https://github.com/display-interactive/selecti
 
 ## Usage
 
-Please see the [demo](https://github.com/czellweg/selectize-wrapper/blob/master/demo/index.html) page for how to use this compoentn. A simple use case could be as follows:
+Please see the [demo](https://github.com/czellweg/selectize-wrapper/blob/master/demo/index.html) page for how to use this component. A simple use case could be as follows:
 
 ```html
     ...
