@@ -4,6 +4,9 @@ Component providing a Polymer wrapper around [selectize.js](https://github.com/b
 
 Forked from [selectize-decorator](https://github.com/display-interactive/selectize-decorator).
 
+[Live-Demo](http://czellweg.github.io/selectize-wrapper/components/selectize-wrapper/demo/)
+[API docs](http://czellweg.github.io/selectize-wrapper/components/selectize-wrapper/)
+
 ## Usage
 
 Please see the [demo](https://github.com/czellweg/selectize-wrapper/blob/master/demo/index.html) page for how to use this compoentn. A simple use case could be as follows:
