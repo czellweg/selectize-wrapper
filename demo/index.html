@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <meta charset="utf-8">
+    <title>selectize demo</title>
+    <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+    <link rel="import" href="../selectize-wrapper.html">
+    <style>
+
+      #container {
+        width: 50%;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .selectize-control.spinner .selectize-dropdown > div {
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+      }
+      .selectize-control.spinner .selectize-dropdown .by {
+        font-size: 11px;
+        opacity: 0.8;
+      }
+      .selectize-control.spinner .selectize-dropdown .by::before {
+        content: 'by ';
+      }
+      .selectize-control.spinner .selectize-dropdown .name {
+        font-weight: bold;
+        margin-right: 5px;
+      }
+      .selectize-control.spinner .selectize-dropdown .title {
+        display: block;
+      }
+      .selectize-control.spinner .selectize-dropdown .description {
+        font-size: 12px;
+        display: block;
+        color: #a0a0a0;
+        white-space: nowrap;
+        width: 100%;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+      .selectize-control.spinner .selectize-dropdown .meta {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        font-size: 10px;
+      }
+      .selectize-control.spinner .selectize-dropdown .meta li {
+        margin: 0;
+        padding: 0;
+        display: inline;
+        margin-right: 10px;
+      }
+      .selectize-control.spinner .selectize-dropdown .meta li span {
+        font-weight: bold;
+      }
+      .selectize-control.spinner::before {
+        -moz-transition: opacity 0.2s;
+        -webkit-transition: opacity 0.2s;
+        transition: opacity 0.2s;
+        content: ' ';
+        z-index: 2;
+        position: absolute;
+        display: block;
+        top: 4;
+        right: 12px;
+        width: 16px;
+        height: 16px;
+        background: url(../images/spinner.gif);
+        background-size: 16px 16px;
+        opacity: 0;
+      }
+      .selectize-control.spinner.loading::before {
+        opacity: 0.4;
+      }
+
+      .icon {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        vertical-align: middle;
+        background-size: 16px 16px;
+        margin: 0 3px 0 0;
+      }
+      .icon.fork {
+        background-image: url(images/repo-fork.png);
+      }
+      .icon.source {
+        background-image: url(images/repo-source.png);
+      }
+
+      .render {
+        font-weight: bold;
+      }
+      .render.value {
+        background-color: green;
+      }
+      .render.text {
+        background-color: yellow;
+      }
+
+    </style>
+
+</head>
+
+<body unresolved>
+
+  <template is="dom-bind" id='t'>
+    <div id="container">
+
+
+      <div class="demo" >
+        <h1><code>Multi-values:</code></h1>
+        <p>Shows how multiple values can be selected. Also, new options can be dynamically added to the list</p>
+        <selectize-wrapper id="ajaxMulti1"
+          placeholder='Placeholder before any selection was made'
+          label='Different label when something is selected'
+          on-suggestion-picked="printValue"
+          max-items='1000'
+          create
+          ajax-options-url="cities.json"
+          ajax-result-transformer="{{cityResultTransformer}}">
+            <paper-icon-button suffix icon="search"></paper-icon-button>
+        </selectize-wrapper>
+      </div>
+
+      <div class="demo">
+        <h1><code>Custom rendering:</code></h1>
+        <p>Shows how rendering can be customized</p>
+        <selectize-wrapper id="ajaxMulti2"
+          create
+          max-items='1000'
+          render="{{renderObjCities}}"
+          ajax-options-url="cities.json"
+          ajax-result-transformer="{{cityResultTransformer}}">
+            <paper-icon-button suffix icon="search"></paper-icon-button>
+        </selectize-wrapper>
+      </div>
+
+      <div class="demo">
+        <h1><code>loading remote data:</code></h1>
+        <p>This demo is the simples case to display remote data in a dropdown.</p>
+        <selectize-wrapper id="ajax1"
+          ajax-options-url="cities.json"
+          ajax-result-transformer="{{cityResultTransformer}}">
+        </selectize-wrapper>
+      </div>
+
+      <div class="demo">
+        <h1><code>load() and render() functions:</code></h1>
+        <p>This demo shows how to the <code>load</code> method is used.</p>
+        <selectize-wrapper id="ajax2"
+          value-field="url"
+          label-field="name"
+          search-fields="{{searchFields}}"
+          load-fn="{{loadFn}}"
+          render="{{renderObjGithub}}"
+          max-items="100"
+          load-throttle="200">
+        </selectize-wrapper>
+      </div>
+
+      <div class="demo">
+        <h1><code>How the score function can be used:</code></h1>
+        <p>This demo shows how to the <code>score</code> method might be used. Shorter city names will be favoured over long city names, i.e. type in 'Z' and you'll see that shorter city names are before longer ones.</p>
+        <selectize-wrapper id="citiesScore"
+          ajax-options-url="cities.json"
+          ajax-result-transformer="{{cityResultTransformer}}"
+          score-fn="{{scoreFnPreferShortCityNames}}"
+          max-items="100">
+        </selectize-wrapper>
+      </div>
+
+  </div>
+</template>
+
+<script>
+    window.addEventListener('DOMContentLoaded', function () {
+        document.body.removeAttribute('unresolved');
+    }, false);
+
+    document.querySelector('#t').addEventListener('dom-change', function() {
+
+      // defines the function to be used *before* selectize-wrapper is initialized
+      this.cityResultTransformer = function(data) {
+        return data.map(function(city) {
+          return {value: city, text: city};
+        });
+      };
+
+      this.printValue = function(e) {
+        console.log(e);
+      };
+
+      this.searchFields = ['name'];
+
+      this.loadFn = function(query, callback) {
+        if (!query.length) return callback();
+        $.ajax({
+          url: 'https://api.github.com/legacy/repos/search/' + encodeURIComponent(query),
+          type: 'GET',
+          error: function() {
+            callback();
+          },
+          success: function(res) {
+            callback(res.repositories.slice(0, 10));
+          }
+        });
+      };
+
+      // this score function favors repositories who have more watchers than others
+      // i.e. these will be placed higher
+      this.scoreFnRepos = function(search) {
+        var score = this.getScoreFunction(search);
+        return function(item) {
+            return score(item) * (1 + Math.min(item.watchers / 100, 1));
+        };
+      };
+
+      // this score function
+      this.scoreFnPreferShortCityNames = function(search) {
+        var score = this.getScoreFunction(search);
+        return function(item) {
+            return score(item) * (1 + Math.max(item.text.length / 100, 1));
+        };
+      };
+
+      this.renderObjCities = {
+        option: function(item, escape) {
+          return '<div>' +
+            '<span class="render value">' + escape(item.value) + '</span>' +
+          '</div>';
+        },
+        item: function(item, escape) {
+          return '<div>' +
+            '<span class="render text">' + escape(item.value) + '</span>' +
+          '</div>';
+        }
+      };
+
+      this.renderObjGithub = {
+        option: function(item, escape) {
+          return '<div>' +
+          '<span class="title">' +
+          '<span class="name"><i class="icon ' + (item.fork ? 'fork' : 'source') + '"></i>' + escape(item.name) + '</span>' +
+          '<span class="by">' + escape(item.username) + '</span>' +
+          '</span>' +
+          '<span class="description">' + escape(item.description) + '</span>' +
+          '<ul class="meta">' +
+          (item.language ? '<li class="language">' + escape(item.language) + '</li>' : '') +
+          '<li class="watchers"><span>' + escape(item.watchers) + '</span> watchers</li>' +
+          '<li class="forks"><span>' + escape(item.forks) + '</span> forks</li>' +
+          '</ul>' +
+          '</div>';
+        }
+      };
+      // now that the value for ajax-result-transformer can be bound to the above function,
+      // we can init the element
+      this.$.ajax1.initialize();
+      this.$.ajax2.initialize();
+      this.$.ajaxMulti1.initialize();
+      this.$.ajaxMulti2.initialize();
+      this.$.citiesScore.initialize();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+    "name": "selectize-wrapper",
+    "version": "1.0",
+    "authors": [
+        "Christof Zellweger"
+    ],
+    "description": "Selectize wrapper with polymer, forked and adjusted from Florian Roy's original implementation",
+    "main": "element/*",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ],
+    "keywords": ["Polymer", "web-components", "selectize", "html", "select", "selectbox"],
+    "dependencies": {
+        "polymer": "Polymer/polymer#^1.1.*",
+        "paper-input": "PolymerElements/paper-input#^1.0",
+        "paper-icon-button": "PolymerElements/paper-icon-button#^1.0",
+        "ugo-jquery-deps": "https://github.com/display-interactive/ugo-jquery-deps.git",
+        "selectize": "latest",
+        "underscore" : "underscore#^1.8"
+    },
+    "devDependencies": {
+        "web-component-tester": "*"
+    }
+}
