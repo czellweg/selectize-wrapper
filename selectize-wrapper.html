@@ -414,14 +414,20 @@ The event will be turned into a Polymer
           var instanceObj = jQuery(field).selectize(options);
           var selectize = instanceObj[0].selectize;
           this._setSelectizeInstance(selectize);
-          this._showHideLabelAndPlaceholder();
+          this._showHideLabelAndPlaceholder(this.selectizeInstance.items.length);
           this._installEventHandlers(selectize);
           this._fireBlurIfNecessary();
         },
 
-        _showHideLabelAndPlaceholder: function() {
-          this._hideLabel = this.selectizeInstance.items.length === 0;
+        _showHideLabelAndPlaceholder: function(propertyToCheck) {
+          // this._hideLabel = this.selectizeInstance.items.length === 0;
+          this._hideLabel = propertyToCheck === 0;
           this._hidePlaceholder = !this._hideLabel
+        },
+
+        _animateLabelFloat: function(element) {
+          Polymer.dom(element).classList.add('label-is-floating');
+          Polymer.dom(element).classList.add('label-is-highlighted');
         },
 
         /**
@@ -435,17 +441,34 @@ The event will be turned into a Polymer
           var self = this;
           
           selectize.on('change', function(value) {
-            self._showHideLabelAndPlaceholder();
+            self._showHideLabelAndPlaceholder(self.selectizeInstance.items.length);
 
             var element = self.querySelector('.input-content');
             if (self.selectizeInstance.items.length === 1) {
               // adding the paper-input-container's classes to make the label 
               // float and highlighted properly
-              Polymer.dom(element).classList.add('label-is-floating');
-              Polymer.dom(element).classList.add('label-is-highlighted');
+              // Polymer.dom(element).classList.add('label-is-floating');
+              // Polymer.dom(element).classList.add('label-is-highlighted');
+              self._animateLabelFloat(element);
             }
             if (self.selectizeInstance.items.length === 0) {
-              var classes = Polymer.dom(element).classList.remove('label-is-floating');
+              Polymer.dom(element).classList.remove('label-is-floating');
+            }
+          });
+
+          selectize.on('type', function(value) {
+
+            if (value) {
+              self._showHideLabelAndPlaceholder(value.length);
+
+              var element = self.querySelector('.input-content');
+              if (value.length > 0) {
+                // user has typed something in
+                self._animateLabelFloat(element);
+              }
+              if (!value || value.length === 0) {
+                Polymer.dom(element).classList.remove('label-is-floating');
+              }
             }
           });
 
