@@ -62,6 +62,7 @@ The event will be turned into a Polymer
       </label>
       <input id='rawInput' is="iron-input" class='spinner'>
       <content select='paper-icon-button'></content>
+      <paper-input-error id='errorMessage'>Please select a value</paper-input-error>
     </paper-input-container>
   </template>
 
@@ -69,6 +70,23 @@ The event will be turned into a Polymer
 <script>
     Polymer({
         is: 'selectize-wrapper',
+
+        behaviors: [
+          Polymer.IronFormElementBehavior,
+          Polymer.IronValidatableBehavior
+        ],
+
+        /**
+         * Fired when an option has been added to the selected items.
+         *
+         * @event selectize-wrapper-add
+         */
+        
+        /**
+         * Fired when a selected item is being removed.
+         *
+         * @event selectize-wrapper-remove
+         */
 
         /** @see https://github.com/brianreavis/selectize.js/blob/master/docs/usage.md */
         properties: {
@@ -158,6 +176,7 @@ The event will be turned into a Polymer
             },
             items: {
                 type: Array,
+                notify: true,
                 value: function() { return []; }
             },
             optgroups: {
@@ -222,6 +241,31 @@ The event will be turned into a Polymer
             },
 
             /**
+             * [plugins description]
+             * @type {Object}
+             */
+            plugins: {
+              type: Array,
+              value: function() { return [ 'remove_button' ]; }
+            },
+
+            /**
+            * The body of the ajax request.
+            * Allows POST requests to send additional data.
+            */
+            ajaxBodyObj: {
+              type: String
+            },
+
+            /**
+            * Ajax method to use for the request.
+            */
+            ajaxMethod: {
+              type: String,
+              value: 'GET'
+            },
+
+            /**
              * Function invoked whenever the user types into the input field.
              * See https://github.com/brianreavis/selectize.js/blob/master/docs/usage.md#callbacks
              * for more information on how to implement a score function.
@@ -262,13 +306,30 @@ The event will be turned into a Polymer
              * the expected format by Selectize of `[{value: <value>, text: <label>}, ...]`.
              *
              * See the demo/index.html on how to use this.
+             * @attribute ajaxResultTransformer
+             * @type Function
              */
             ajaxResultTransformer: {
               type: Function
             },
 
+            defaultResultTransformer: {
+              type: Function,
+              value: function() {
+                return function(data) {
+                  var resultList = data.map(function(obj) {
+                    return {value: obj, text: obj};
+                  });
+                  return resultList;
+                };
+              }
+            },
+
             /**
             * The label being displayed if no items have been selected yet.
+            * @attribute placeholder
+            * @type String
+            * @default ""
             */
             placeholder: {
               type: String,
@@ -277,6 +338,9 @@ The event will be turned into a Polymer
 
             /**
             * The label being displayed when items have been selected.
+            * @attribute label
+            * @type String
+            * @default ""
             */
             label: {
               type: String,
@@ -286,12 +350,37 @@ The event will be turned into a Polymer
             /**
             * Specifies whether the label is shown or not.
             * Needed so that it looks decent while the dropdown is open.
+            * @attribute _hideLabel
+            * @type Boolean
+            * @default false
             * @access private
             */
             _hideLabel: {
               type: Boolean,
               value: false
+            },
+
+            /**
+            * Promise indicating whether this wrapper instance has been initialised.
+            * @attribute isInitialised
+            * @type Promise
+            */
+            isInitialised: {
+              type: Promise
+            },
+
+            /**
+            * The value for this element.
+            */
+            value: {
+              notify: true,
+              type: String
+            },
+
+            selectizeInstance: {
+              type: Object
             }
+
         },
 
         /**
@@ -303,89 +392,172 @@ The event will be turned into a Polymer
          * @method initialize
          */
         initialize: function() {
-            var field = this.$.rawInput;
-            // var field = Polymer.dom(this).querySelector('select, input');
-            var options = {
-                delimiter: this.delimiter
-                ,diacritics: this.diacritics
-                ,create: this.createOpt
-                ,createOnBlur: this.createOnBlur
-                ,createFilter: this.createFilter
-                ,highlight: this.highlight
-                ,persist: this.persist
-                ,openOnFocus: this.openOnFocus
-                ,maxOptions: this.maxOptions
-                ,maxItems: this.maxItems
-                ,hideSelected: this.hideSelected
-                ,closeAfterSelect: this.closeAfterSelect
-                ,alglowEmptyOption: this.allowEmptyOption
-                ,scrollDuration: this.scrollDuration
-                ,loadThrottle: this.loadThrottle
-                ,loadingClass: this.loadingClass
-                ,preload: this.preload
-                ,dropdownParent: this.dropdownParent
-                ,addPrecedence: this.addPrecedence
-                ,score: this.scoreFn
-                ,selectOnTab: this.selectOnTab
-                ,load: this.loadFn
-                ,options: this.options
-                ,items: this.items
-                ,optgroups: this.optgroups
-                ,dataAttr: this.dataAttr
-                ,valueField: this.valueField
-                ,optgroupValueField: this.optgroupValueField
-                ,labelField: this.labelField
-                ,optgroupLabelField: this.optgroupLabelField
-                ,optgroupField: this.optgroupField
-                ,sortField: this.sortField
-                ,searchField: this.searchFields
-                ,searchConjunction: this.searchConjunction
-                ,lockOptgroupOrder: this.lockOptgroupOrder
-                ,copyClassesToDropdown: this.copyClassesToDropdown
-                ,plugins: ['remove_button']
-                ,render: this.render
-            };
+          var self = this;
+          var field = this.$.rawInput;
+          var userOptions = {
+              delimiter: this.delimiter
+              ,diacritics: this.diacritics
+              ,create: this.createOpt
+              ,createOnBlur: this.createOnBlur
+              ,createFilter: this.createFilter
+              ,highlight: this.highlight
+              ,persist: this.persist
+              ,openOnFocus: this.openOnFocus
+              ,maxOptions: this.maxOptions
+              ,maxItems: this.maxItems
+              ,hideSelected: this.hideSelected
+              ,closeAfterSelect: this.closeAfterSelect
+              ,alglowEmptyOption: this.allowEmptyOption
+              ,scrollDuration: this.scrollDuration
+              ,loadThrottle: this.loadThrottle
+              ,loadingClass: this.loadingClass
+              ,preload: this.preload
+              ,dropdownParent: this.dropdownParent
+              ,addPrecedence: this.addPrecedence
+              ,score: this.scoreFn
+              ,selectOnTab: this.selectOnTab
+              ,load: this.loadFn
+              ,options: this.options
+              ,items: this.items
+              ,optgroups: this.optgroups
+              ,dataAttr: this.dataAttr
+              ,valueField: this.valueField
+              ,optgroupValueField: this.optgroupValueField
+              ,labelField: this.labelField
+              ,optgroupLabelField: this.optgroupLabelField
+              ,optgroupField: this.optgroupField
+              ,sortField: this.sortField
+              ,searchField: this.searchFields
+              ,searchConjunction: this.searchConjunction
+              ,lockOptgroupOrder: this.lockOptgroupOrder
+              ,copyClassesToDropdown: this.copyClassesToDropdown
+              ,plugins: this.plugins
+              ,render: this.render
+          };
 
-            if (null !== this.ajaxOptionsUrl) {
-                this._buildAjaxOptions(field, options)
+          this.isInitialised = new Promise(function(resolve, reject) {
+            if (null !== self.ajaxOptionsUrl) {
+                self._buildAjaxOptions(field, userOptions, arguments[0], arguments[1]);
             } else {
-                this._createSelectizeInstance(field, options);
+                self._createSelectizeInstance(field, userOptions, arguments[0]);
             }
+          });
+          return this.isInitialised;
         },
 
         /**
-         * Build select from ajax url
-         * @param field
-         * @param options
+         * Builds the selectize instance based on the result from an ajax request.
+         *
+         * @param field The DOM input instance the selectize instance will be attached to
+         * @param userOptions The current selectize configuration options
          * @access private
          * @ method _buildAjaxOptions
          */
-        _buildAjaxOptions: function(field, options) {
-            var that = this;
-            var config = {
-                url: this.ajaxOptionsUrl,
-                type: 'GET',
-                success: function(data) {
-                    var dataValues = null;
-                    if (that.ajaxOptionsRoot) {
-                        dataValues = data[that.ajaxOptionsRoot];
-                    } else {
-                        dataValues = data;
-                    }
-                    
-                    if (that.ajaxResultTransformer) {
-                      options.options = that.ajaxResultTransformer(dataValues);
-                    } else {
-                      options.options = dataValues;
-                    }
-                    that._createSelectizeInstance(field, options);
-                }
-            };
-            if (this.ajaxOptionsDataType) {
-                config.dataType = this.ajaxOptionsDataType;
+        _buildAjaxOptions: function(field, userOptions, resolveFunction, rejectFunction) {
+          var self = this;
+
+          if (this.ajaxOptionsDataType) {
+              config.dataType = this.ajaxOptionsDataType;
+          }
+
+          var ajax = document.createElement('iron-ajax');
+          ajax.contentType = 'application/json';
+          ajax.url = this.ajaxOptionsUrl;
+          
+          if (this.ajaxMethod) {
+            ajax.method = this.ajaxMethod.toUpperCase();
+          }
+
+          if (this.ajaxBody) {
+            ajax.body = this.ajaxBody;
+          }
+          ajax.generateRequest().completes.then(function success(resp) {
+            var dataValues = null;
+            if (self.ajaxOptionsRoot) {
+                dataValues = resp.response[self.ajaxOptionsRoot];
+            } else {
+                dataValues = resp.response;
             }
-            jQuery.ajax(config);
+            
+            if (self.ajaxResultTransformer) {
+              self.options = self.ajaxResultTransformer(dataValues);
+              userOptions.options = self.options;
+            } else {
+              self.options = self.defaultResultTransformer(dataValues);
+              userOptions.options = self.options;
+            }
+            self._createSelectizeInstance(field, userOptions, resolveFunction);
+          }, function error(err) { 
+            rejectFunction(err);
+          });
         },
+
+        /**
+        * Allows this instance to be initialised with values.
+        */
+        initializeFromObject: function(obj) {
+          var self = this;
+          var config = obj.selectizeWrapper;
+
+          if (config) {
+            
+            if (config.ajaxOptionsUrl) {
+              this.ajaxOptionsUrl = config.ajaxOptionsUrl;
+            }
+            
+            if (config.ajaxMethod) {
+              this.ajaxMethod = config.ajaxMethod;
+            }
+
+            if (config.ajaxBody) {
+              this.ajaxBody = config.ajaxBody;
+            }
+            
+            return this.initialize().then(function() {
+              if (config.items && _.keys(config.items).length > 0) {
+                // select the values in the 'select' list
+                _.forEach(config.items, function(item) {
+                  self.addItem(item);
+                });
+              }
+            });
+          } else {
+            // console.log('Initialization using an object was invoked but no configuration was provided.');
+            // console.log('Will invoke simple initialization.');
+            return this.initialize();
+          }
+        },
+
+        /**
+        * Creates the selectize instance on the given field element.
+        * Also installs the needed event handlers.
+        * @method _createSelectizeInstance
+        * @access private
+        */
+        _createSelectizeInstance: function(field, userOptions, resolveFunction) {
+
+          var instanceObj = jQuery(field).selectize(userOptions);
+          var selectizeInstance = instanceObj[0].selectize;
+          this._setSelectizeInstance(selectizeInstance);
+
+          this._showHideLabelAndPlaceholder(this.getSelectizeInstance().items.length);
+          this._installEventHandlers(this.getSelectizeInstance());
+          this._fireBlurIfNecessary();
+
+          // resolve this Promise
+          resolveFunction();
+        },
+
+        /**
+        * Adds an item to the currently selected items.
+        * @method addItem
+        * @param {String} value The value to add
+        */
+        addItem: function(value) {
+          this.getSelectizeInstance().addItem(value, false);
+          this._setCurrentValue();
+        },
+
 
         /**
         * Removes an item from the currently selected items.
@@ -393,7 +565,33 @@ The event will be turned into a Polymer
         * @param {String} value The value to remove
         */
         removeItem: function(value) {
-          this.selectizeInstance.removeItem(value, true);
+          this.getSelectizeInstance().removeItem(value, false);
+          this._setCurrentValue();
+        },
+
+        /**
+        *
+        */
+        _setCurrentValue: function() {
+          // reference items from underlying selectize instance
+          this.items = this.getSelectizeInstance().items;
+          this.value = this.getSelectizeInstance().getValue();
+        },
+
+        // Overidden from Polymer.IronValidatableBehavior. Will set the `invalid`
+        // attribute automatically, which should be used for styling.
+        _getValidity: function() {
+          this._setCurrentValue();
+          var currentValue = this.value;
+          // indicates that it's an array because it has the join method
+          if (currentValue.join) {
+            this.value = currentValue.join();
+          } else {
+            this.value = currentValue;
+          }
+          var valid = !_.isUndefined(this.value) && !_.isEmpty(this.value);
+          this.$.errorMessage.update({invalid: !valid});
+          return valid;
         },
 
         /**
@@ -401,33 +599,18 @@ The event will be turned into a Polymer
         */
         _setSelectizeInstance: function(instance) {
           this.selectizeInstance = instance;
+
+          this._setCurrentValue();
+        },
+
+        getSelectizeInstance: function() {
+          return this.selectizeInstance;
         },
         
-        /**
-        * Creates the selectize instance on the given field element.
-        * Also installs the needed event handlers.
-        * @method _createSelectizeInstance
-        * @access private
-        */
-        _createSelectizeInstance: function(field, options) {
-
-          var instanceObj = jQuery(field).selectize(options);
-          var selectize = instanceObj[0].selectize;
-          this._setSelectizeInstance(selectize);
-          this._showHideLabelAndPlaceholder(this.selectizeInstance.items.length);
-          this._installEventHandlers(selectize);
-          this._fireBlurIfNecessary();
-        },
-
         _showHideLabelAndPlaceholder: function(propertyToCheck) {
-          // this._hideLabel = this.selectizeInstance.items.length === 0;
+          // this._hideLabel = this.getSelectizeInstance().items.length === 0;
           this._hideLabel = propertyToCheck === 0;
           this._hidePlaceholder = !this._hideLabel
-        },
-
-        _animateLabelFloat: function(element) {
-          Polymer.dom(element).classList.add('label-is-floating');
-          Polymer.dom(element).classList.add('label-is-highlighted');
         },
 
         /**
@@ -441,19 +624,20 @@ The event will be turned into a Polymer
           var self = this;
           
           selectize.on('change', function(value) {
-            self._showHideLabelAndPlaceholder(self.selectizeInstance.items.length);
+            self._showHideLabelAndPlaceholder(self.getSelectizeInstance().items.length);
 
-            var element = self.querySelector('.input-content');
-            if (self.selectizeInstance.items.length === 1) {
-              // adding the paper-input-container's classes to make the label 
-              // float and highlighted properly
-              // Polymer.dom(element).classList.add('label-is-floating');
-              // Polymer.dom(element).classList.add('label-is-highlighted');
-              self._animateLabelFloat(element);
+            var numOfElements = self.getSelectizeInstance().items.length;
+            if (numOfElements === 1) {
+              // workaround if shadow-dom is enabled: if so, the above query
+              // for .input-content returns null because you can't 'see' inside
+              // of the shadow dom
+              self.$.input.alwaysFloatLabel = true;
+            } else if (numOfElements === 0) {
+              self.$.input.alwaysFloatLabel = false;
             }
-            if (self.selectizeInstance.items.length === 0) {
-              Polymer.dom(element).classList.remove('label-is-floating');
-            }
+            self._setCurrentValue();
+
+            self.fire('change-selectize-wrapper');
           });
 
           selectize.on('type', function(value) {
@@ -461,24 +645,30 @@ The event will be turned into a Polymer
             if (value) {
               self._showHideLabelAndPlaceholder(value.length);
 
-              var element = self.querySelector('.input-content');
               if (value.length > 0) {
-                // user has typed something in
-                self._animateLabelFloat(element);
+                // workaround if shadow-dom is enabled: if so, the above query
+                // for .input-content returns null because you can't 'see' inside
+                // of the shadow dom
+                self.$.input.alwaysFloatLabel = true;
+              } else if (!value || value.length === 0) {
+                self.$.input.alwaysFloatLabel = false;
               }
-              if (!value || value.length === 0) {
-                Polymer.dom(element).classList.remove('label-is-floating');
-              }
+
+              self._setCurrentValue();
             }
           });
 
           selectize.on('item_add', function(value, item) {
+            self._setCurrentValue();
             self.fire('selectize-wrapper-add', {value: value});
           });
 
           selectize.on('item_remove', function(value, item) {
+            self._setCurrentValue();
             self.fire('selectize-wrapper-remove', {value: value});
           });
+
+
         },
 
         /**
