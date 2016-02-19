@@ -1,0 +1,38 @@
+{
+  "name": "jquery.html",
+  "authors": [
+    "Florian Roy"
+  ],
+  "description": "Polymer jquery dependencies element",
+  "main": "element/*",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "keywords": [
+    "Polymer",
+    "web-components",
+    "jquery",
+    "html"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.1.*",
+    "jquery": "2.1.*"
+  },
+  "devDependencies": {
+    "web-component-tester": "*"
+  },
+  "homepage": "https://github.com/display-interactive/ugo-jquery-deps",
+  "_release": "34b4f25178",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "34b4f2517890473f04e1fa9655125cd250d06090"
+  },
+  "_source": "https://github.com/display-interactive/ugo-jquery-deps.git",
+  "_target": "*",
+  "_originalSource": "https://github.com/display-interactive/ugo-jquery-deps.git"
+}

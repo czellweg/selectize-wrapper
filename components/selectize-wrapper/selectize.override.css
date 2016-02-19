@@ -1,0 +1,58 @@
+.selectize-input {
+  border: none;
+  padding: 0;
+  
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+}
+
+.selectize-dropdown,
+.selectize-input,
+.selectize-input input {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.selectize-control.multi .selectize-input.has-items {
+  padding: 6px 8px 0px;
+}
+
+.selectize-input.focus { 
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+.selectize-dropdown {
+  margin-top: 12px;
+}
+
+.selectize-input,
+.selectize-control.single .selectize-input.input-active {
+  background: transparent;
+}
+/*
+* The following 2 rules show a spinner in the selectize element
+* after 0.2s of delay. Useful for remote calls.
+*/
+.selectize-control.spinner::before {
+  -moz-transition: opacity 0.01s;
+  -webkit-transition: opacity 0.01s;
+  transition: opacity 0.01s;
+  content: ' ';
+  z-index: 2;
+  position: absolute;
+  display: block;
+  top: 4px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  background: url(images/spinner.gif);
+  background-size: 16px 16px;
+  opacity: 0;
+}
+.selectize-control.spinner.loading::before {
+  opacity: 0.4;
+}
