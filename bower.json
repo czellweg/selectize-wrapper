@@ -16,6 +16,7 @@
     "keywords": ["Polymer", "web-components", "selectize", "html", "select", "selectbox"],
     "dependencies": {
         "polymer": "Polymer/polymer#^1.1.*",
+        "iron-form" : "PolymerElements/iron-form#^1.0",
         "paper-input": "PolymerElements/paper-input#^1.0",
         "paper-icon-button": "PolymerElements/paper-icon-button#^1.0",
         "ugo-jquery-deps": "https://github.com/display-interactive/ugo-jquery-deps.git",

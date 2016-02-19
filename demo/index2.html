@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <meta charset="utf-8">
+    <title>selectize demo</title>
+    
+    
+    <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+
+    <link rel="import" href="../selectize-wrapper.html">
+    <link rel="import" href="../../iron-form/iron-form.html">
+    <link rel="import" href="../../paper-button/paper-button.html">
+    <style>
+
+      #container {
+        width: 50%;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+    </style>
+
+</head>
+
+<body unresolved>
+  <dom-module name="level-one">
+    <template>
+      <selectize-wrapper id="wrapper"
+        placeholder='Placeholder before any selection was made'
+        label='Different label when something is selected'
+        max-items='1000'
+        create
+        ajax-options-url="cities.json"
+        ajax-result-transformer="{{cityResultTransformer}}">
+          <paper-icon-button suffix icon="search"></paper-icon-button>
+      </selectize-wrapper>
+    </template>
+  </dom-module>
+
+  <dom-module name="level-two">
+    <template>
+      <form is='iron-form' id='parentForm'>
+        <paper-material class='top' elevation="0">
+          <level-one required on-selectize-wrapper-remove='_validateForm'></level-one>
+        </paper-material>
+      </form>
+    </template>
+  </dom-module>
+
+  <dom-module name="level-three">
+    <template>
+      <level-two></level-two>
+    </template>
+  </dom-module>
+
+  <template is="dom-bind" id='t'>
+    <div class='horizontal layout'>
+      <div id="container">
+        
+        <div class="demo" >
+          <h1><code>Is this a bug?</code></h1>
+          
+          <level-three></level-three>
+          
+        </div>
+
+    </div>
+  </div>
+</template>
+
+<script>
+  Polymer({
+    is: 'level-one',
+
+    behaviors: [
+      Polymer.IronFormElementBehavior,
+      Polymer.IronValidatableBehavior
+    ],
+
+    ready: function() {
+      
+      this.$.wrapper.ajaxResultTransformer = function(data) {
+        if (data) {
+          return data.map(function(city) {
+            return {value: city, text: city};
+          });
+        }
+      };
+
+      Promise.all([
+        this.$.wrapper.initialize(),
+      ]);
+    },
+
+    _getValidity: function() {
+      return this.$.wrapper._getValidity();
+    }
+
+  });
+  
+  Polymer({
+    is: 'level-two',
+
+    _validateForm: function(event) {
+      this.$.parentForm.validate();
+    }
+
+  });
+  
+  Polymer({
+    is: 'level-three'
+  });
+</script>
+
+<script>
+    window.addEventListener('DOMContentLoaded', function () {
+        document.body.removeAttribute('unresolved');
+    }, false);
+
+    document.querySelector('#t').addEventListener('dom-change', function() {
+      
+      console.log('Ready to roll!');
+      
+    });
+</script>
+</body>
+</html>
